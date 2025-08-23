@@ -10,6 +10,7 @@
 #include <vector>
 #include <algorithm>
 #include <limits>
+#include <random>
 
 
 using namespace std;
@@ -28,7 +29,7 @@ void editProfile();
 bool askYesOrNo(const string& question);
 void seatSelection(const string& busNo);
 void passengerInfo(const vector<int>& seats, const string& boarding, const string& dropping, const string& busNo);
-void modeOfPayment();
+void modeOfPayment(const string& busNo, const vector<int>& seats, const string& boarding, const string& dropping, const string& userMobile, double amount);
 void searchBus();
 
 
@@ -71,59 +72,88 @@ int main() {
     }
 }
 
-void payment(int fare) {
-    bool applyCoupon = askYesOrNo("Do you have a coupon?");
-    int finalFare = fare;
-
-    if (applyCoupon) {
-        map<string, int> coupons;
-        ifstream file("coupons.csv");
-
-        if (file.is_open()) {
+void payment(const string& busNo, const vector<int>& seats, const string& boarding, const string& dropping, const string& userMobile, double amount) {
+    while (true) {
+        cout << "Have a coupon? (Y/N): ";
+        string input;
+        cin >> input;
+        if (input == "Y" || input == "y") {
+            ifstream file("coupons.csv");
+            if (!file.is_open()) {
+                cout << "Coupon file not found.\n";
+                continue;
+            }
+            cout << "Available coupons:\n";
             string line;
+            vector<string> coupons;
             while (getline(file, line)) {
-                stringstream ss(line);
-                string code, discountStr;
-                getline(ss, code, ',');
-                getline(ss, discountStr, ',');
-                int discount = stoi(discountStr);
-                coupons[code] = discount;
-                cout << "Code: " << code << " - Discount: ₹" << discount << endl;
+                cout << line << endl;
+                coupons.push_back(line);
             }
             file.close();
-        } else {
-            cout << "Could not open coupons.csv file!\n";
-        }
 
-        while (true) {
-            string enteredCode;
             cout << "Enter coupon code: ";
-            cin >> enteredCode;
+            string coupon;
+            cin >> coupon;
 
-            if (coupons.find(enteredCode) != coupons.end()) {
-                int discount = coupons[enteredCode];
-                finalFare -= discount;
-                if (finalFare < 0) finalFare = 0;
-                cout << "Coupon applied! ₹" << discount << " discount.\n";
-                break;
-            } else {
-                cout << "Invalid coupon code.\n";
-                if (!askYesOrNo("Do you want to try another coupon?")) {
-                    break;
+            bool validCoupon = false;
+            double discount = 0;
+            for (const auto& c : coupons) {
+                size_t commaPos = c.find(',');
+                if (commaPos != string::npos) {
+                    string code = c.substr(0, commaPos);
+                    string discountStr = c.substr(commaPos + 1);
+                    if (code == coupon) {
+                        discount = stod(discountStr);
+                        validCoupon = true;
+                        break;
+                    }
                 }
             }
+
+            if (!validCoupon) {
+                cout << "Invalid coupon code.\n";
+                continue;
+            }
+
+            double discountedAmount = amount - discount;
+            if (discountedAmount < 0) discountedAmount = 0;
+            cout << "Discount applied. Amount to pay: " << discountedAmount << endl;
+
+            while (true) {
+                cout << "Ready to pay? (Y/N): ";
+                cin >> input;
+                if (input == "Y" || input == "y") {
+                    modeOfPayment(busNo, seats, boarding, dropping, userMobile, discountedAmount);
+                    return;
+                } else if (input == "N" || input == "n") {
+                    searchBus();
+                    return;
+                } else {
+                    cout << "Invalid input. Please enter Y or N.\n";
+                }
+            }
+        } else if (input == "N" || input == "n") {
+            cout << "Amount to pay: " << amount << endl;
+            while (true) {
+                cout << "Ready to pay? (Y/N): ";
+                cin >> input;
+                if (input == "Y" || input == "y") {
+                    modeOfPayment(busNo, seats, boarding, dropping, userMobile, amount);
+                    return;
+                } else if (input == "N" || input == "n") {
+                    searchBus();
+                    return;
+                } else {
+                    cout << "Invalid input. Please enter Y or N.\n";
+                }
+            }
+        } else {
+            cout << "Invalid input. Please enter Y or N.\n";
         }
     }
-
-    cout << "Final Amount to Pay: ₹" << finalFare << endl;
-
-    if (askYesOrNo("Ready to pay?")) {
-        modeOfPayment();
-    } else {
-        cout << "Returning to bus search...\n";
-        searchBus();
-    }
 }
+
 
 void seatSelection(const string& busNo) {
     ifstream file("seats.csv");
@@ -303,7 +333,9 @@ void passengerInfo(const vector<int>& seats, const string& boarding, const strin
     int totalFare = farePerSeat * seats.size();
     cout << "\nTotal Fare: ₹" << totalFare << "\n";
 
-    payment(totalFare);
+    payment(busNo, seats, boarding, dropping, currentUserMobile, totalFare);
+
+
 }
 
 
@@ -502,6 +534,113 @@ void searchBus() {
 
 
     
+}
+
+
+
+void addBookingToCSV(const string& busNo, const vector<int>& seats, const string& boarding, const string& dropping, const string& userMobile, double amount);
+
+bool upiPayment() {
+    string upiId, pin;
+    cout << "Enter UPI ID: ";
+    cin >> upiId;
+    cout << "Enter UPI PIN: ";
+    cin >> pin;
+    srand(time(0));
+    bool verified = (rand() % 2 == 0);
+    if (verified) {
+        cout << "UPI Payment Verified Successfully.\n";
+        return true;
+    } else {
+        cout << "UPI Payment Failed. Try again.\n";
+        return false;
+    }
+}
+
+bool cardPayment() {
+    string cardNo;
+    cout << "Enter Card Number: ";
+    cin >> cardNo;
+    srand(time(0));
+    int otp = rand() % 9000 + 1000;
+    cout << "OTP sent: " << otp << endl;
+    int enteredOtp;
+    cout << "Enter OTP: ";
+    cin >> enteredOtp;
+    if (enteredOtp == otp) {
+        cout << "Card Payment Verified Successfully.\n";
+        return true;
+    } else {
+        cout << "Incorrect OTP. Try again.\n";
+        return false;
+    }
+}
+
+bool netBankingPayment() {
+    vector<string> banks = {"SBI", "HDFC", "ICICI", "Axis", "PNB"};
+    cout << "Available Banks:\n";
+    for (int i = 0; i < banks.size(); ++i) {
+        cout << i+1 << ". " << banks[i] << endl;
+    }
+    int choice;
+    cout << "Choose your bank (1-" << banks.size() << "): ";
+    cin >> choice;
+    if (choice < 1 || choice > banks.size()) {
+        cout << "Invalid bank choice.\n";
+        return false;
+    }
+    string username, password;
+    cout << "Enter Username: ";
+    cin >> username;
+    cout << "Enter Password: ";
+    cin >> password;
+    srand(time(0));
+    bool verified = (rand() % 2 == 0);
+    if (verified) {
+        cout << "Net Banking Verified Successfully.\n";
+        return true;
+    } else {
+        cout << "Net Banking Authentication Failed. Try again.\n";
+        return false;
+    }
+}
+
+void modeOfPayment(const string& busNo, const vector<int>& seats, const string& boarding, const string& dropping, const string& userMobile, double amount) {
+    while (true) {
+        cout << "\nMode of Payment:\n1. UPI\n2. Credit/Debit Card\n3. Net Banking\nEnter your choice: ";
+        int choice;
+        cin >> choice;
+        bool paymentSuccess = false;
+        switch (choice) {
+            case 1:
+                paymentSuccess = upiPayment();
+                break;
+            case 2:
+                paymentSuccess = cardPayment();
+                break;
+            case 3:
+                paymentSuccess = netBankingPayment();
+                break;
+            default:
+                cout << "Invalid choice. Try again.\n";
+                continue;
+        }
+        if (paymentSuccess) {
+            addBookingToCSV(busNo, seats, boarding, dropping, userMobile, amount);
+            cout << "Booking successful! Returning to dashboard...\n";
+            break;
+        } else {
+            cout << "Payment failed. Returning to payment options...\n";
+        }
+    }
+}
+
+void addBookingToCSV(const string& busNo, const vector<int>& seats, const string& boarding, const string& dropping, const string& userMobile, double amount) {
+    ofstream file("bookings.csv", ios::app);
+    for (int seat : seats) {
+        file << userMobile << "," << busNo << "," << seat << "," << boarding << "," << dropping << "," << amount / seats.size() << endl;
+    }
+    file.close();
 }
 
 
