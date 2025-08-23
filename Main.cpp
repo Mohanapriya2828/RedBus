@@ -26,7 +26,10 @@ void searchBus();
 void bookings();
 void editProfile();
 bool askYesOrNo(const string& question);
-void passengerInfo(const vector<int>& seats, const string& boarding, const string& dropping);
+void seatSelection(const string& busNo);
+void passengerInfo(const vector<int>& seats, const string& boarding, const string& dropping, const string& busNo);
+void modeOfPayment();
+void searchBus();
 
 
 int main() {
@@ -68,6 +71,59 @@ int main() {
     }
 }
 
+void payment(int fare) {
+    bool applyCoupon = askYesOrNo("Do you have a coupon?");
+    int finalFare = fare;
+
+    if (applyCoupon) {
+        map<string, int> coupons;
+        ifstream file("coupons.csv");
+
+        if (file.is_open()) {
+            string line;
+            while (getline(file, line)) {
+                stringstream ss(line);
+                string code, discountStr;
+                getline(ss, code, ',');
+                getline(ss, discountStr, ',');
+                int discount = stoi(discountStr);
+                coupons[code] = discount;
+                cout << "Code: " << code << " - Discount: ₹" << discount << endl;
+            }
+            file.close();
+        } else {
+            cout << "Could not open coupons.csv file!\n";
+        }
+
+        while (true) {
+            string enteredCode;
+            cout << "Enter coupon code: ";
+            cin >> enteredCode;
+
+            if (coupons.find(enteredCode) != coupons.end()) {
+                int discount = coupons[enteredCode];
+                finalFare -= discount;
+                if (finalFare < 0) finalFare = 0;
+                cout << "Coupon applied! ₹" << discount << " discount.\n";
+                break;
+            } else {
+                cout << "Invalid coupon code.\n";
+                if (!askYesOrNo("Do you want to try another coupon?")) {
+                    break;
+                }
+            }
+        }
+    }
+
+    cout << "Final Amount to Pay: ₹" << finalFare << endl;
+
+    if (askYesOrNo("Ready to pay?")) {
+        modeOfPayment();
+    } else {
+        cout << "Returning to bus search...\n";
+        searchBus();
+    }
+}
 
 void seatSelection(const string& busNo) {
     ifstream file("seats.csv");
@@ -170,51 +226,85 @@ void seatSelection(const string& busNo) {
     for (int seat : selectedSeats) cout << seat << " ";
     cout << "\nBoarding point: " << boarding << "\nDropping point: " << dropping << "\n";
 
-    passengerInfo(selectedSeats, boarding, dropping);
+    passengerInfo(selectedSeats, boarding, dropping, busNo);
+
 }
 
  
 
-void passengerInfo(const vector<int>& seats, const string& boarding, const string& dropping) {
-    int numSeats = seats.size();
-    if (numSeats == 0) {
-        cout << "No seats selected, skipping passenger info.\n";
+void passengerInfo(const vector<int>& seats, const string& boarding, const string& dropping, const string& busNo) {
+    int farePerSeat = 0;
+    ifstream file("bus.csv");
+    string line;
+    getline(file, line); 
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string csvBusNo, bus_name, from, to, date, time, fareStr;
+
+        getline(ss, csvBusNo, ',');
+        getline(ss, bus_name, ',');
+        getline(ss, from, ',');
+        getline(ss, to, ',');
+        getline(ss, date, ',');
+        getline(ss, time, ',');
+        getline(ss, fareStr, ',');
+
+        if (csvBusNo == busNo) {
+            farePerSeat = stoi(fareStr);
+            break;
+        }
+    }
+    file.close();
+
+    if (farePerSeat == 0) {
+        cout << "Fare not found for this bus. Cannot proceed.\n";
         return;
     }
 
     int numPassengers;
-    while (true) {
-        cout << "Enter number of passengers: ";
-        cin >> numPassengers;
-        cin.ignore(); 
+    cout << "\nEnter number of passengers: ";
+    cin >> numPassengers;
 
-        if (numPassengers <= 0) {
-            cout << "Number of passengers must be positive.\n";
-        } else if (numPassengers > numSeats) {
-            cout << "Number of passengers cannot exceed number of seats selected (" << numSeats << ").\n";
-        } else {
-            break;
-        }
+    if (numPassengers != seats.size()) {
+        cout << "Number of passengers must match the number of selected seats (" << seats.size() << ").\n";
+        return;
     }
+
+    vector<string> names;
+    vector<int> ages;
+    vector<string> genders;
 
     for (int i = 0; i < numPassengers; ++i) {
-        string name, age, gender;
+        string name, gender;
+        int age;
 
-        cout << "Passenger " << (i + 1) << " Name: ";
+        cout << "\nPassenger " << (i + 1) << ":\n";
+        cout << "Name: ";
+        cin.ignore();
         getline(cin, name);
+        cout << "Age: ";
+        cin >> age;
+        cout << "Gender: ";
+        cin >> gender;
 
-        cout << "Passenger " << (i + 1) << " Age: ";
-        getline(cin, age);
-
-        cout << "Passenger " << (i + 1) << " Gender: ";
-        getline(cin, gender);
-
-        cout << "\n";
+        names.push_back(name);
+        ages.push_back(age);
+        genders.push_back(gender);
     }
 
-    cout << "Passenger info recorded successfully!\n";
-}
+    cout << "\nPassenger Details:\n";
+    for (int i = 0; i < numPassengers; ++i) {
+        cout << "Seat " << seats[i] << " - " << names[i] << ", Age: " << ages[i] << ", Gender: " << genders[i] << "\n";
+    }
 
+    cout << "Boarding: " << boarding << ", Dropping: " << dropping << "\n";
+
+    int totalFare = farePerSeat * seats.size();
+    cout << "\nTotal Fare: ₹" << totalFare << "\n";
+
+    payment(totalFare);
+}
 
 
 
@@ -423,8 +513,8 @@ void editProfile() {
     cout << "Editing profile..\n";
 }
 
-void passengerInfo() {
-    cout << "Passenger info function called .\n";
+void modeOfPayment() {
+    cout << "Processing payment...\n";
 }
 
 
