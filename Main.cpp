@@ -5,6 +5,12 @@
 #include <ctime>
 #include <sstream>
 #include <cctype>
+#include <map>
+#include <set>
+#include <vector>
+#include <algorithm>
+#include <limits>
+
 
 using namespace std;
 
@@ -20,6 +26,7 @@ void searchBus();
 void bookings();
 void editProfile();
 bool askYesOrNo(const string& question);
+void passengerInfo();
 
 int main() {
     while (true) {
@@ -46,6 +53,99 @@ int main() {
         if (success) {
             dashboard();  
         }
+    }
+}
+
+
+
+void seatSelection(const string& busNo) {
+    ifstream file("seats.csv");
+    if (!file.is_open()) {
+        cout << "Could not open seats.csv file!\n";
+        return;
+    }
+
+    vector<pair<int, string>> seatStatus;
+    string line;
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string bus, seatStr, status;
+        getline(ss, bus, ',');
+        getline(ss, seatStr, ',');
+        getline(ss, status, ',');
+
+        if (bus == busNo) {
+            seatStatus.push_back({stoi(seatStr), status});
+        }
+    }
+    file.close();
+
+    if (seatStatus.empty()) {
+        cout << "No seats found for bus " << busNo << "\n";
+        return;
+    }
+
+    cout << "Seats for Bus No " << busNo << ":\n";
+    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); 
+    for (auto& seat : seatStatus) {
+        cout << seat.first << " [" << seat.second << "]  ";
+        if (seat.first % 5 == 0) cout << "\n";
+    }
+    cout << "\n";
+
+    string inputSeats;
+    vector<int> selectedSeats;
+
+    while (true) {
+        cout << "Enter seat numbers needed (comma separated) or press Enter to skip: ";
+        getline(cin, inputSeats);
+
+        if (inputSeats.empty()) {
+            cout << "No seats selected. Moving to next step.\n";
+            break;
+        }
+
+        stringstream ss(inputSeats);
+        string seatNoStr;
+        selectedSeats.clear();
+        bool allAvailable = true;
+
+        while (getline(ss, seatNoStr, ',')) {
+            try {
+                int seatNo = stoi(seatNoStr);
+                selectedSeats.push_back(seatNo);
+            } catch (...) {
+                cout << "Invalid seat number: " << seatNoStr << "\n";
+                allAvailable = false;
+                break;
+            }
+        }
+
+        if (!allAvailable) continue;
+
+        bool anyUnavailable = false;
+        for (int seat : selectedSeats) {
+            auto it = find_if(seatStatus.begin(), seatStatus.end(),
+                              [seat](const pair<int, string>& s) { return s.first == seat; });
+            if (it == seatStatus.end()) {
+                cout << "Seat number " << seat << " does not exist.\n";
+                anyUnavailable = true;
+            } else if (it->second == "booked") {
+                cout << "Seat number " << seat << " is already booked.\n";
+                anyUnavailable = true;
+            }
+        }
+
+        if (anyUnavailable) {
+            cout << "Please select seats again.\n";
+            continue;
+        }
+
+        cout << "Selected seats: ";
+        for (int seat : selectedSeats) cout << seat << " ";
+        cout << "\n";
+        break;
     }
 }
 
@@ -242,8 +342,10 @@ void searchBus() {
     string selectedBusNo;
     cout << "\nEnter the Bus Number you want to book: ";
     cin >> selectedBusNo;
+    seatSelection(selectedBusNo);
 
-    cout << "Seat selection for Bus No " << selectedBusNo << " (Feature coming soon)\n";
+
+    
 }
 
 
@@ -255,8 +357,9 @@ void editProfile() {
     cout << "Editing profile..\n";
 }
 
-
-
+void passengerInfo() {
+    cout << "Passenger info function called .\n";
+}
 
 
 
