@@ -1,0 +1,50 @@
+bus_no,bus_name,from,to,date,time,fare,type,ac
+101,Red Express,Coimbatore,Chennai,2025-08-24,07:00,650,Seater,AC
+102,Blue Line,Coimbatore,Chennai,2025-08-24,10:00,500,Sleeper,Non-AC
+103,Green Travels,Coimbatore,Chennai,2025-08-24,20:00,700,Sleeper,AC
+104,Speed Bus,Coimbatore,Chennai,2025-08-25,08:00,600,Seater,Non-AC
+
+105,Red Express,Chennai,Coimbatore,2025-08-24,06:30,650,Seater,AC
+106,Blue Line,Chennai,Coimbatore,2025-08-24,11:00,500,Sleeper,Non-AC
+107,Green Travels,Chennai,Coimbatore,2025-08-25,22:00,750,Sleeper,AC
+108,Speed Bus,Chennai,Coimbatore,2025-08-25,09:00,550,Seater,Non-AC
+
+109,SRS Travels,Coimbatore,Bangalore,2025-08-24,06:00,600,Seater,AC
+110,KPN Travels,Coimbatore,Bangalore,2025-08-24,13:00,450,Sleeper,Non-AC
+111,Orange Tours,Coimbatore,Bangalore,2025-08-24,22:00,700,Sleeper,AC
+112,Sugama Travels,Coimbatore,Bangalore,2025-08-25,08:00,500,Seater,Non-AC
+
+113,SRS Travels,Bangalore,Coimbatore,2025-08-24,07:00,600,Seater,AC
+114,KPN Travels,Bangalore,Coimbatore,2025-08-24,15:00,450,Sleeper,Non-AC
+115,Orange Tours,Bangalore,Coimbatore,2025-08-24,23:00,700,Sleeper,AC
+116,Sugama Travels,Bangalore,Coimbatore,2025-08-25,09:00,500,Seater,Non-AC
+
+117,VRL Travels,Mumbai,Chennai,2025-08-24,06:00,1200,Sleeper,AC
+118,Neeta Travels,Mumbai,Chennai,2025-08-24,13:30,1000,Sleeper,Non-AC
+119,Red Bus,Mumbai,Chennai,2025-08-25,19:30,1300,Seater,AC
+120,Orange Tours,Mumbai,Chennai,2025-08-25,21:00,1250,Seater,Non-AC
+
+121,VRL Travels,Chennai,Mumbai,2025-08-24,07:30,1200,Sleeper,AC
+122,Neeta Travels,Chennai,Mumbai,2025-08-24,14:30,1000,Sleeper,Non-AC
+123,Red Bus,Chennai,Mumbai,2025-08-25,20:00,1300,Seater,AC
+124,Orange Tours,Chennai,Mumbai,2025-08-25,22:00,1250,Seater,Non-AC
+
+125,KSRTC,Chennai,Bangalore,2025-08-24,06:00,400,Seater,Non-AC
+126,VRL Express,Chennai,Bangalore,2025-08-24,10:00,550,Sleeper,AC
+127,SRS,Chennai,Bangalore,2025-08-24,17:30,600,Sleeper,AC
+128,KPN,Chennai,Bangalore,2025-08-25,09:00,450,Seater,Non-AC
+
+129,KSRTC,Bangalore,Chennai,2025-08-24,07:00,400,Seater,Non-AC
+130,VRL Express,Bangalore,Chennai,2025-08-24,11:00,550,Sleeper,AC
+131,SRS,Bangalore,Chennai,2025-08-24,18:30,600,Sleeper,AC
+132,KPN,Bangalore,Chennai,2025-08-25,10:00,450,Seater,Non-AC
+
+133,Green Line,Coimbatore,Mumbai,2025-08-25,06:00,1100,Sleeper,AC
+134,Orange Express,Coimbatore,Mumbai,2025-08-25,13:00,950,Seater,Non-AC
+135,VRL,Coimbatore,Mumbai,2025-08-25,21:00,1200,Sleeper,AC
+136,Red Express,Coimbatore,Mumbai,2025-08-25,22:00,1050,Sleeper,Non-AC
+
+137,Green Line,Mumbai,Coimbatore,2025-08-25,07:00,1100,Sleeper,AC
+138,Orange Express,Mumbai,Coimbatore,2025-08-25,14:00,950,Seater,Non-AC
+139,VRL,Mumbai,Coimbatore,2025-08-25,22:00,1200,Sleeper,AC
+140,Red Express,Mumbai,Coimbatore,2025-08-25,23:00,1050,Sleeper,Non-AC
