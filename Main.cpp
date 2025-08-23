@@ -31,6 +31,16 @@ void seatSelection(const string& busNo);
 void passengerInfo(const vector<int>& seats, const string& boarding, const string& dropping, const string& busNo);
 void modeOfPayment(const string& busNo, const vector<int>& seats, const string& boarding, const string& dropping, const string& userMobile, double amount);
 void searchBus();
+void bookings();
+void upcomingTrips();
+void pastTrips();
+void cancellation(const string& busNo, const string& ticketId, const string& userMobile);
+void freeSeatsAfterCancellation(const string& busNo, const vector<int>& seats);
+
+void addBookingToCSV(const std::string& busNo, const std::vector<int>& seats,
+                     const std::string& boarding, const std::string& dropping,
+                     const std::string& userMobile, double amount,
+                     const std::string& tripDate = "");
 
 
 int main() {
@@ -508,13 +518,15 @@ void searchBus() {
             (to_csv == to || to_csv == to + "\r") &&
             date_csv == date) {
 
-            cout << bus_no << "     | "
+           cout << bus_no << "     | "
                  << bus_name << " | "
                  << from_csv << " | "
                  << to_csv << " | "
                  << date_csv << " | "
                  << time << " | "
                  << fare << endl;
+                 
+
 
             busFound = true;
         }
@@ -538,7 +550,6 @@ void searchBus() {
 
 
 
-void addBookingToCSV(const string& busNo, const vector<int>& seats, const string& boarding, const string& dropping, const string& userMobile, double amount);
 
 bool upiPayment() {
     string upiId, pin;
@@ -635,26 +646,317 @@ void modeOfPayment(const string& busNo, const vector<int>& seats, const string& 
     }
 }
 
-void addBookingToCSV(const string& busNo, const vector<int>& seats, const string& boarding, const string& dropping, const string& userMobile, double amount) {
-    ofstream file("bookings.csv", ios::app);
+#include <ctime>
+#include <sstream>
+#include <iomanip>
+#include <fstream>
+#include <vector>
+#include <string>
+
+std::tm parseDate(const std::string& dateStr) {
+    std::tm tm = {};
+    std::istringstream ss(dateStr);
+    ss >> std::get_time(&tm, "%Y-%m-%d");
+    return tm;
+}
+
+bool isUpcoming(const std::string& tripDate) {
+    std::tm tripTm = parseDate(tripDate);
+    std::time_t trip_time = std::mktime(&tripTm);
+    std::time_t now = std::time(nullptr);
+    return difftime(trip_time, now) > 0;
+}
+
+void addBookingToCSV(const std::string& busNo, const std::vector<int>& seats,
+                     const std::string& boarding, const std::string& dropping,
+                     const std::string& userMobile, double amount,
+                     const std::string& tripDate)
+{
+    std::ofstream file("bookings.csv", std::ios::app);
+    std::string status = isUpcoming(tripDate) ? "upcoming" : "past";
+
     for (int seat : seats) {
-        file << userMobile << "," << busNo << "," << seat << "," << boarding << "," << dropping << "," << amount / seats.size() << endl;
+        file << userMobile << "," << busNo << "," << seat << "," << boarding << ","
+             << dropping << "," << amount / seats.size() << "," << status << "\n";
     }
     file.close();
 }
 
 
-void bookings() {
-    cout << "Viewing bookings...\n";
-}
+
+
+
 
 void editProfile() {
     cout << "Editing profile..\n";
 }
 
-void modeOfPayment() {
-    cout << "Processing payment...\n";
+
+
+void bookings() {
+    while (true) {
+        cout << "1. Upcoming Trips\n2. Past Bookings\nEnter choice: ";
+        int choice; cin >> choice;
+        cin.ignore();
+
+        if (choice == 1) {
+            upcomingTrips();
+        } else if (choice == 2) {
+            pastTrips();
+        } else {
+            cout << "Invalid choice.\n";
+            continue;
+        }
+
+        if (!askYesOrNo("Do you want to view bookings again?")) break;
+    }
 }
 
+void upcomingTrips() {
+    ifstream file("bookings.csv");
+    if (!file.is_open()) {
+        cout << "Unable to open bookings.csv\n";
+        return;
+    }
 
+    vector<string> userBookings;
+    string line;
+    string header;
+    getline(file, header);
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string ticketId, busNo, seatsStr, boarding, dropping, userMobile, status, date, rest;
+
+        getline(ss, ticketId, ',');
+        getline(ss, busNo, ',');
+        getline(ss, seatsStr, ',');
+        getline(ss, boarding, ',');
+        getline(ss, dropping, ',');
+        getline(ss, userMobile, ',');
+        getline(ss, status, ',');
+        getline(ss, date, ',');
+
+        if (userMobile == currentUserMobile && status == "Upcoming") {
+            userBookings.push_back(line);
+        }
+    }
+    file.close();
+
+    if (userBookings.empty()) {
+        cout << "No upcoming trips found.\n";
+        return;
+    }
+
+    cout << "\nUpcoming Trips:\n";
+    for (const auto& booking : userBookings) {
+        stringstream ss(booking);
+        string ticketId, busNo, seatsStr, boarding, dropping, userMobile, status, date;
+
+        getline(ss, ticketId, ',');
+        getline(ss, busNo, ',');
+        getline(ss, seatsStr, ',');
+        getline(ss, boarding, ',');
+        getline(ss, dropping, ',');
+        getline(ss, userMobile, ',');
+        getline(ss, status, ',');
+        getline(ss, date, ',');
+
+        cout << "Ticket ID: " << ticketId << ", Bus: " << busNo << ", Seats: " << seatsStr
+             << ", Boarding: " << boarding << ", Dropping: " << dropping << ", Date: " << date << "\n";
+    }
+
+    cout << "\nEnter Ticket ID to view details or 0 to return: ";
+    string ticketChoice; 
+    getline(cin, ticketChoice);
+    if (ticketChoice == "0") return;
+
+    auto it = find_if(userBookings.begin(), userBookings.end(), [&](const string& bk){
+        stringstream ss(bk);
+        string tid;
+        getline(ss, tid, ',');
+        return tid == ticketChoice;
+    });
+
+    if (it == userBookings.end()) {
+        cout << "Invalid Ticket ID.\n";
+        return;
+    }
+
+    stringstream ss(*it);
+    string ticketId, busNo, seatsStr, boarding, dropping, userMobile, status, date;
+
+    getline(ss, ticketId, ',');
+    getline(ss, busNo, ',');
+    getline(ss, seatsStr, ',');
+    getline(ss, boarding, ',');
+    getline(ss, dropping, ',');
+    getline(ss, userMobile, ',');
+    getline(ss, status, ',');
+    getline(ss, date, ',');
+
+    cout << "\nTicket Details:\nTicket ID: " << ticketId << "\nBus No: " << busNo << "\nSeats: " << seatsStr
+         << "\nBoarding: " << boarding << "\nDropping: " << dropping << "\nDate: " << date << "\nStatus: " << status << "\n";
+
+    if (askYesOrNo("Do you want to cancel this ticket?")) {
+        cancellation(busNo, ticketId, userMobile);
+    }
+}
+
+void cancellation(const string& busNo, const string& ticketId, const string& userMobile) {
+    ifstream file("bookings.csv");
+    if (!file.is_open()) {
+        cout << "Unable to open bookings.csv\n";
+        return;
+    }
+
+    vector<string> allBookings;
+    string line;
+    string header;
+    getline(file, header);
+
+    vector<int> seatsToFree;
+    string cancelledLine;
+    bool found = false;
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string tid, bNo, seatsStr, boarding, dropping, uMobile, status, date;
+
+        getline(ss, tid, ',');
+        getline(ss, bNo, ',');
+        getline(ss, seatsStr, ',');
+        getline(ss, boarding, ',');
+        getline(ss, dropping, ',');
+        getline(ss, uMobile, ',');
+        getline(ss, status, ',');
+        getline(ss, date, ',');
+
+        if (tid == ticketId && uMobile == userMobile && bNo == busNo) {
+            found = true;
+            cancelledLine = line;
+
+            stringstream seatsSS(seatsStr);
+            string seat;
+            while (getline(seatsSS, seat, '|')) {
+                seatsToFree.push_back(stoi(seat));
+            }
+            continue;
+        }
+        allBookings.push_back(line);
+    }
+    file.close();
+
+    if (!found) {
+        cout << "Ticket not found for cancellation.\n";
+        return;
+    }
+
+    ofstream outFile("bookings.csv");
+    outFile << header << "\n";
+    for (const string& bk : allBookings) outFile << bk << "\n";
+    outFile.close();
+
+    freeSeatsAfterCancellation(busNo, seatsToFree);
+
+    cout << "Ticket cancelled successfully. Amount will be refunded in 2 days.\n";
+}
+
+void freeSeatsAfterCancellation(const string& busNo, const vector<int>& seats) {
+    fstream file("seats.csv", ios::in);
+    if (!file.is_open()) return;
+
+    vector<string> lines;
+    string line;
+    while (getline(file, line)) {
+        if (line.substr(0, busNo.size()) == busNo) {
+            stringstream ss(line);
+            string bNo, seatNo, status;
+            vector<pair<int, string>> seatStatus;
+            getline(ss, bNo, ',');
+            string seatsData = line.substr(busNo.size() + 1);
+
+            vector<string> parts;
+            string tmp;
+            stringstream sstr(seatsData);
+            while (getline(sstr, tmp, ',')) parts.push_back(tmp);
+
+            for (string& part : parts) {
+                size_t colonPos = part.find(':');
+                int seatNum = stoi(part.substr(0, colonPos));
+                string stat = part.substr(colonPos + 1);
+                for (int s : seats) {
+                    if (seatNum == s && stat == "occupied") stat = "available";
+                }
+                part = to_string(seatNum) + ":" + stat;
+            }
+
+            string newLine = busNo + "," + parts[0];
+            for (int i = 1; i < (int)parts.size(); i++) newLine += "," + parts[i];
+            lines.push_back(newLine);
+        } else {
+            lines.push_back(line);
+        }
+    }
+    file.close();
+
+    ofstream outFile("seats.csv");
+    for (const string& ln : lines) outFile << ln << "\n";
+    outFile.close();
+}
+
+void pastTrips() {
+    ifstream file("bookings.csv");
+    if (!file.is_open()) {
+        cout << "Unable to open bookings.csv\n";
+        return;
+    }
+
+    string line;
+    string header;
+    getline(file, header);
+
+    vector<string> pastBookings;
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string ticketId, busNo, seatsStr, boarding, dropping, userMobile, status, date;
+
+        getline(ss, ticketId, ',');
+        getline(ss, busNo, ',');
+        getline(ss, seatsStr, ',');
+        getline(ss, boarding, ',');
+        getline(ss, dropping, ',');
+        getline(ss, userMobile, ',');
+        getline(ss, status, ',');
+        getline(ss, date, ',');
+
+        if (userMobile == currentUserMobile && status == "Completed") {
+            pastBookings.push_back(line);
+        }
+    }
+    file.close();
+
+    if (pastBookings.empty()) {
+        cout << "No past trips found.\n";
+        return;
+    }
+
+    cout << "\nPast Trips:\n";
+    for (const auto& booking : pastBookings) {
+        stringstream ss(booking);
+        string ticketId, busNo, seatsStr, boarding, dropping, userMobile, status, date;
+
+        getline(ss, ticketId, ',');
+        getline(ss, busNo, ',');
+        getline(ss, seatsStr, ',');
+        getline(ss, boarding, ',');
+        getline(ss, dropping, ',');
+        getline(ss, userMobile, ',');
+        getline(ss, status, ',');
+        getline(ss, date, ',');
+
+        cout << "Ticket ID: " << ticketId << ", Bus: " << busNo << ", Seats: " << seatsStr
+             << ", Boarding: " << boarding << ", Dropping: " << dropping << ", Date: " << date << "\n";
+    }
+}
 
