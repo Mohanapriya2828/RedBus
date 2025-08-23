@@ -26,36 +26,47 @@ void searchBus();
 void bookings();
 void editProfile();
 bool askYesOrNo(const string& question);
-void passengerInfo();
+void passengerInfo(const vector<int>& seats, const string& boarding, const string& dropping);
+
 
 int main() {
+    bool loggedIn = false;
+
     while (true) {
-        cout << "1. Register" << endl;
-        cout << "2. Login" << endl;
-        cout << "Enter your choice: ";
-        int choice;
-        cin >> choice;
-        cin.ignore();
+        if (!loggedIn) {
+            cout << "---- RedBus System ----" << endl;
+            cout << "1. Register" << endl;
+            cout << "2. Login" << endl;
+            cout << "3. Exit" << endl;
+            cout << "Enter your choice: ";
+            int choice;
+            cin >> choice;
+            cin.ignore();
 
-        bool success = false;
-
-        switch (choice) {
-            case 1:
-                success = loginOrRegister(true);
-                break;
-            case 2:
-                success = loginOrRegister(false);
-                break;
-            default:
-                cout << "Invalid choice. Try again.\n";
-        }
-
-        if (success) {
-            dashboard();  
+            switch (choice) {
+                case 1:
+                    loginOrRegister(true);
+                    loggedIn = !currentUserMobile.empty();
+                    break;
+                case 2:
+                    loginOrRegister(false);
+                    loggedIn = !currentUserMobile.empty();
+                    break;
+                case 3:
+                    cout << "Exiting...\n";
+                    return 0;
+                default:
+                    cout << "Invalid choice. Try again.\n";
+                    break;
+            }
+        } else {
+            dashboard();
+            cout << "Logging out...\n";
+            currentUserMobile = "";
+            loggedIn = false;
         }
     }
 }
-
 
 
 void seatSelection(const string& busNo) {
@@ -87,12 +98,13 @@ void seatSelection(const string& busNo) {
     }
 
     cout << "Seats for Bus No " << busNo << ":\n";
-    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); 
     for (auto& seat : seatStatus) {
         cout << seat.first << " [" << seat.second << "]  ";
         if (seat.first % 5 == 0) cout << "\n";
     }
     cout << "\n";
+
+    cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
     string inputSeats;
     vector<int> selectedSeats;
@@ -147,9 +159,63 @@ void seatSelection(const string& busNo) {
         cout << "\n";
         break;
     }
+
+    string boarding, dropping;
+    cout << "Enter boarding point: ";
+    getline(cin, boarding);
+    cout << "Enter dropping point: ";
+    getline(cin, dropping);
+
+    cout << "Selected seats: ";
+    for (int seat : selectedSeats) cout << seat << " ";
+    cout << "\nBoarding point: " << boarding << "\nDropping point: " << dropping << "\n";
+
+    passengerInfo(selectedSeats, boarding, dropping);
 }
 
  
+
+void passengerInfo(const vector<int>& seats, const string& boarding, const string& dropping) {
+    int numSeats = seats.size();
+    if (numSeats == 0) {
+        cout << "No seats selected, skipping passenger info.\n";
+        return;
+    }
+
+    int numPassengers;
+    while (true) {
+        cout << "Enter number of passengers: ";
+        cin >> numPassengers;
+        cin.ignore(); 
+
+        if (numPassengers <= 0) {
+            cout << "Number of passengers must be positive.\n";
+        } else if (numPassengers > numSeats) {
+            cout << "Number of passengers cannot exceed number of seats selected (" << numSeats << ").\n";
+        } else {
+            break;
+        }
+    }
+
+    for (int i = 0; i < numPassengers; ++i) {
+        string name, age, gender;
+
+        cout << "Passenger " << (i + 1) << " Name: ";
+        getline(cin, name);
+
+        cout << "Passenger " << (i + 1) << " Age: ";
+        getline(cin, age);
+
+        cout << "Passenger " << (i + 1) << " Gender: ";
+        getline(cin, gender);
+
+        cout << "\n";
+    }
+
+    cout << "Passenger info recorded successfully!\n";
+}
+
+
 
 
 bool validateMobileNumber(const string& mobile) {
