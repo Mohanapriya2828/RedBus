@@ -179,8 +179,73 @@ void dashboard() {
 }
 
 
-void searchBus() 
-{ cout << "Searching bus...\n"; }
+void searchBus() {
+    string from, to, date;
+    cout << "Enter source location: ";
+    cin >> from;
+    cout << "Enter destination location: ";
+    cin >> to;
+    cout << "Enter date of journey (YYYY-MM-DD): ";
+    cin >> date;
+
+    ifstream file("bus.csv");
+    if (!file.is_open()) {
+        cout << "Could not open bus.csv file!\n";
+        return;
+    }
+
+    string line;
+    bool busFound = false;
+
+    cout << "\nAvailable Buses:\n";
+    cout << "-------------------------------------------------------------\n";
+    cout << "BusNo | Name          | From     | To       | Date       | Time  | Fare\n";
+    cout << "-------------------------------------------------------------\n";
+
+    getline(file, line);
+
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string bus_no, bus_name, from_csv, to_csv, date_csv, time, fare;
+
+        getline(ss, bus_no, ',');
+        getline(ss, bus_name, ',');
+        getline(ss, from_csv, ',');
+        getline(ss, to_csv, ',');
+        getline(ss, date_csv, ',');
+        getline(ss, time, ',');
+        getline(ss, fare, ',');
+
+        if ((from_csv == from || from_csv == from + "\r") &&
+            (to_csv == to || to_csv == to + "\r") &&
+            date_csv == date) {
+
+            cout << bus_no << "     | "
+                 << bus_name << " | "
+                 << from_csv << " | "
+                 << to_csv << " | "
+                 << date_csv << " | "
+                 << time << " | "
+                 << fare << endl;
+
+            busFound = true;
+        }
+    }
+
+    file.close();
+
+    if (!busFound) {
+        cout << "No buses found for the given criteria.\n";
+        return;
+    }
+
+    string selectedBusNo;
+    cout << "\nEnter the Bus Number you want to book: ";
+    cin >> selectedBusNo;
+
+    cout << "Seat selection for Bus No " << selectedBusNo << " (Feature coming soon)\n";
+}
+
 
 void bookings() {
     cout << "Viewing bookings...\n";
